@@ -1,0 +1,12 @@
+---
+- include: service.yml
+  with_items: "{{ java_apps }}"
+  loop_control:
+    loop_var: java_app
+  when: java_app_name == "" or java_app_name == java_app.name
+  
+- include: check.yml
+  with_items: "{{ java_apps }}"
+  loop_control:
+    loop_var: java_app
+  when: java_app_name == "" or java_app_name == java_app.name

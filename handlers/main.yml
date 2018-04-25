@@ -1,0 +1,11 @@
+---
+- name: restart services
+  become: yes
+  systemd:
+    name: "{{ java_app.name }}"
+    state: restarted
+    daemon_reload: yes
+  with_items: "{{ java_apps }}"
+  loop_control:
+    loop_var: java_app
+  when: java_app.enabled|default(true) and java_app.check|default(true) and ( java_app_name == "" or java_app_name == java_app.name )

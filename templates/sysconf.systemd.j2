@@ -1,0 +1,5 @@
+{% if java_app.custom_vars_env is defined %}
+{% for custom_var in java_app.custom_vars_env %}
+{{custom_var.name}}={{custom_var.value}}
+{% endfor %}
+{% endif %}

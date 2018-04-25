@@ -1,0 +1,15 @@
+---
+
+java_app_name: ""
+java_apps: []
+# - name: example
+#   user: example
+#   config_template: "templates/prototype/config.yml.j2"
+#   java_opts: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${log_path}/ -Xms128m -Xmx256m"
+#   jar_src_path: "/var/lib/jenkins/workspace/something/something.jar"
+#   enabled: true
+#   check: true
+#   app_type: "DROPWIZARD"
+#   dropwizard_migrate_database: true
+#   check_url: "http://localhost:8181/health"
+#   check_status: "200"

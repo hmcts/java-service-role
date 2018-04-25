@@ -1,0 +1,10 @@
+---
+- meta: flush_handlers
+
+- name: Ensure service is serving requests
+  uri: url="{{ java_app.check_url }}"
+  register: result
+  until: "result.status == {{ java_app.check_status|default(200) }}"
+  retries: 5
+  delay: 10
+  when: java_app.check_url|default(false)

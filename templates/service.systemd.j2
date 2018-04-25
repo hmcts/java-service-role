@@ -1,0 +1,13 @@
+[Unit]
+Description={{ java_app.name }}
+
+[Service]
+ExecStart=/usr/bin/java {{ java_app.java_opts | default(java_opts) }} -jar /opt/{{ java_app.name }}/{{ java_app.name }}.jar {% if java_app.app_type is defined and java_app.app_type == "SPRINGBOOT" %} --spring.config.location=/etc/{{ java_app.name }}/{{ java_app.name }}.yml {% else %} server /etc/{{ java_app.name }}/{{ java_app.name }}.yml {% endif %}
+
+Restart=always
+RestartSec=10
+User={{ java_app.user }}
+EnvironmentFile=-/etc/sysconfig/{{ java_app.name }}
+
+[Install]
+WantedBy=multi-user.target

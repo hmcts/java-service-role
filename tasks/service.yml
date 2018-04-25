@@ -1,0 +1,109 @@
+---
+- name: Set useful variables
+  set_fact:
+    java_app_jar: "/opt/{{ java_app.name }}/{{ java_app.name }}.jar"
+    java_app_config: "/etc/{{ java_app.name }}/{{ java_app.name }}.yml"
+
+- name: Ensure service group is created
+  become: yes
+  group:
+    name: "{{ java_app.user }}"
+    state: present
+
+- name: Ensure service user is created
+  become: yes
+  user:
+    name: "{{ java_app.user }}"
+    groups: "{{ java_app.user }}"
+    state: present
+
+- name: Ensure directories are created
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ java_app.user }}"
+    group: "{{ java_app.user }}"
+    mode: 0755
+  with_items:
+    - "/opt/{{ java_app.name }}"
+    - "/var/log/{{ java_app.name }}"
+    - "/etc/{{ java_app.name }}"
+
+- name: Ensure all logs have correct perms
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ java_app.user }}"
+    group: "{{ java_app.user }}"
+    mode: "u=rwX,g=rX,o=rX"
+    recurse: yes
+  with_items:
+    - "/var/log/{{ java_app.name }}"
+
+- name: Copy jar file to proper location (TO BE REPLACED)
+  become: yes
+  copy:
+    src: "{{ java_app.jar_src_path }}"
+    dest: "{{ java_app_jar }}"
+    owner: "{{ java_app.user }}"
+    group: "{{ java_app.user }}"
+    mode: 0640
+  notify: restart services
+
+- name: Ensure service configuration is created
+  become: yes
+  template:
+    src: "{{ java_app.config_template }}"
+    dest: "{{ java_app_config }}"
+    owner: "{{ java_app.user }}"
+    group: "{{ java_app.user }}"
+    mode: 0640
+  notify: restart services
+  when: java_app.enabled|default(true) and java_app.config_template is defined
+
+- name: Service | Ensure sysconf exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - "/etc/sysconfig"
+  become: yes
+
+- name: Service | Install systemd service
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "root"
+    group: "root"
+    mode: "{{ item.mode }}"
+  become: yes
+  register: service_definition
+  with_items:
+    - src: 'sysconf.systemd.j2'
+      dest: "/etc/sysconfig/{{ java_app.name }}"
+      mode: 'u=rwx,g=rx,o=rx'
+    - src: 'service.systemd.j2'
+      dest: "/etc/systemd/system/{{ java_app.name }}.service"
+      mode: 'u=rw,g=r,o=r'
+  notify: restart services
+
+- name: Run Drowizard db migrate
+  become: yes
+  become_user: "{{ java_app.user }}"
+  shell: "/usr/bin/java -jar {{ java_app_jar }} db migrate {{ java_app_config }}"
+  run_once: true
+  when: java_app.app_type == "DROPWIZARD" and java_app.dropwizard_migrate_database|default(false)
+
+- name: Ensure service is running and enabled at boot
+  become: yes
+  systemd:
+    name: "{{ java_app.name }}"
+    state: started
+    enabled: yes
+  when: java_app.enabled|default(true) and java_app.check|default(true)
+
